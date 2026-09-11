@@ -1,0 +1,80 @@
+name: docker-request-lab
+
+x-app: &app
+  build: ./app
+  restart: unless-stopped
+  init: true
+  cpus: 0.50
+  mem_limit: 256m
+  memswap_limit: 256m
+  pids_limit: 128
+  cgroup: private
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  healthcheck:
+    test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+    interval: 10s
+    timeout: 5s
+    retries: 3
+    start_period: 15s
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+
+services:
+  app-a:
+    <<: *app
+    environment:
+      APP_NAME: app-a
+      PEER_URL: http://app-b:8000
+    ports: ['127.0.0.1:8001:8000']
+
+  app-b:
+    <<: *app
+    environment:
+      APP_NAME: app-b
+      PEER_URL: http://app-a:8000
+    ports: ['127.0.0.1:8002:8000']
+
+  prometheus:
+    image: prom/prometheus:v3.3.0
+    restart: unless-stopped
+    cpus: 0.50
+    mem_limit: 512m
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=3d
+      - --storage.tsdb.retention.size=1GB
+    ports: ['127.0.0.1:9090:9090']
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    restart: unless-stopped
+    cpus: 0.50
+    mem_limit: 512m
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Copy .env.example to .env and set GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    ports: ['127.0.0.1:3000:3000']
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+
+volumes:
+  prometheus-data:
+  grafana-data:

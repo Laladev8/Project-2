@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: request-lab
+    orgId: 1
+    folder: Docker Lab
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
