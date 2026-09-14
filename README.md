@@ -156,18 +156,6 @@ docker compose up -d --force-recreate app-a app-b
 istifadə etmir. API üçün 160 MiB buffer maksimumu 256 MiB container limitinə
 uyğun seçilib; RAM limitini azaltsan böyük buffer OOM yarada bilər.
 
-## Test və yoxlama
-
-```bash
-python3 tests/smoke.py
-docker compose config --quiet
-docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml
-```
-
-Smoke test real iki lokal proses işə salır: iki istiqamətli sorğular, metriklər,
-xəta ssenarisi, config validation və yükün dayandırılmasını yoxlayır.
-Tam stack yoxlamasında Prometheus **Status → Target health** altında iki target
-UP olmalı, Grafana dashboard-da iki tətbiqin metrikləri görünməlidir.
 
 ## Dayandırmaq
 
